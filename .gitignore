@@ -1,0 +1,5 @@
+.directory
+
+*.pyc
+
+*_bk.py

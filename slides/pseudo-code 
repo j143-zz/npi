@@ -1,0 +1,17 @@
+ enc_size = self.size_of_env_observation()
+                argument_size = IntegerArguments.size_of_arguments
+                input_enc = InputLayer(batch_input_shape=(self.batch_size, enc_size), name='input_enc')
+                input_arg = InputLayer(batch_input_shape=(self.batch_size, argument_size), name='input_arg')
+                input_prg = Embedding(input_dim=PROGRAM_VEC_SIZE, output_dim=PROGRAM_KEY_VEC_SIZE, input_length=1, batch_input_shape=(self.batch_size, 1))
+
+                f_enc = Sequential(name='f_enc')
+                f_enc.add(Merge([input_enc, input_arg], mode='concat'))
+                f_enc.add(MaxoutDense(128, nb_feature=4))
+                self.f_enc = f_enc
+
+                program_embedding = Sequential(name='program_embedding')
+                program_embedding.add(input_prg)
+
+                f_enc_convert = Sequential(name='f_enc_convert')
+                f_enc_convert.add(f_enc)
+                f_enc_convert.add(RepeatVector(1)) 

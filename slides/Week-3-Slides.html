@@ -1,0 +1,223 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Week 3 Slides</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+  </head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+        <section>
+          <h2> Study and implementation of 'Neural Programmer-Interpreters' </h2>
+          <p>
+            Summary of my work in the past week.
+          </p>
+        </section>
+        <section>
+          <h2> Summary: </h2>
+          <ol>
+            <li>Profiling the model's archtecture.</li>
+						<li>Drawing out the input and output's formulation.</li>
+						<li>Summarizing the training strategies presented in the paper & designing the implementation of them.</li>
+						<li>Learning to use <i> MxNet </i> by reading source codes.</li>
+          </ol>
+        </section>
+        <section>
+          <section>
+            <h2>Model's Archtecture</h2>
+            <p>In this section we investigate into some encoder and decoder layers which are necessary when generating inputs and analyzing outputs (using python style pseudo-code).</p>
+          </section>
+          <section>
+          <h3> Encoders </h3>
+          <p> Here are some encoders to transfer raw input data into formalized ones.</p>
+          <pre>
+<p>$$s_t = f_{enc}(e_t, a_t)$$</p>
+          </pre>
+          </section>
+          <section>
+          <h3> Decoders </h3>
+          <p> Here are some decoders to transfer hidden state into comprehensible outputs.</p>
+          <pre>
+          <p>
+\begin{align}
+ r_t = f_{end}(h_t)\\
+ k_t = f_{prog}(h_t)\\
+ a_{t+1} = f_{arg}(h_t)
+\end{align}
+          </p>
+          </pre>
+          </section>
+          <section>
+          <h3> Layer Archtecture of Encoders & Decoders </h3>
+          <p> Here we describes the layer archtecture of aforemetioned encoders and decoders, most of which are very simple.</p>
+          <pre>
+<p>$f_{enc}$:</p>
+            <code class="hljs" data-trim contenteditable>
+f_enc = ([Merge([input_enc, input_arg], mode='concat'),
+          MaxoutDense(128, nb_feature=4)]
+        )
+            </code>
+          </pre>
+          <pre>
+<p>$f_{end}$:</p>
+            <code class="hljs" data-trim contenteditable>
+f_end = ([f_lstm,
+          Dense(1, W_regularizer=l2(0.001))
+          Activation('sigmoid', name='sigmoid_end')]
+        )
+            </code>
+          </pre>
+          </section>
+          <section>
+          <h3> Layer Archtecture of Encoders & Decoders </h3>
+          <p> Here we describes the layer archtecture of aforemetioned encoders and decoders, most of which are very simple.</p>
+          <pre>
+<p>$f_{prog}$:</p>
+            <code class="hljs" data-trim contenteditable>
+f_prog = ([f_lstm,
+           Dense(PROGRAM_KEY_VEC_SIZE, activation="relu"),
+           Dense(PROGRAM_VEC_SIZE, W_regularizer=l2(0.0001)),
+           Activation('softmax', name='softmax_prog')]
+        )
+            </code>
+          </pre>
+          </section>
+          <section>
+          <h3> Layer Archtecture of Encoders & Decoders </h3>
+          <p> Here we describes the layer archtecture of aforemetioned encoders and decoders, most of which are very simple.</p>
+         
+          <pre>
+<p>$f_{args}$:</p>
+            <code class="hljs" data-trim contenteditable>
+f_args = []
+for i in range(1, MAX_ARG_NUM+1):
+    f_arg = ([f_lstm,
+              Dense(ARG_DEPTH, W_regularizer=l2(0.0001))
+              Activation('softmax', name='softmax_arg%s' % i)
+    )
+    f_args.append(f_arg)
+            </code>
+          </pre>
+          </section>
+        </section>
+       
+        <section>
+          <section>
+            <h2> The Fomulation of Inputs & Outputs:</h2>
+            <p>
+              In this section we use macros and python style pseudo-code to present the formulation of the inputs and outputs we need within our model.
+            </p>
+          </section>
+          <section>
+            <h3>Macros</h3>
+            <pre>
+ FIELD_ROW : number of rows 
+ FIELD_WIDTH : number of columns
+ FIELD_DEPTH : number of size of each element
+ PROGRAM_VEC_SIZE : size of program embedding vector size
+ PROGRAM_KEY_VEC_SIZE : size of key value vector size
+ MAX_PROGRAM_NUM : number of total subprograms in the memory
+ MAX_ARG_NUM : the largest number of arguments 
+ ARG_DEPTH : size of arguments
+            </pre>
+          </section>
+          <section>
+            <h3> Formulation of inputs: </h3>
+            <ul> <font size=6>
+                <li> <font color="#99FF99">env_observation</font>: shape of batch_size * FIELD_ROW * FIELD_DEPTH array </li>
+                <li> <font color="#99FF99">prog</font>: shape of batch_size * PROGRAM_VEC_SIZE array</li>
+                <li> <font color="#99FF99">args</font>: shape of batch_size * ARG_DEPTH * MAX_ARG_NUM array </li>
+            </font>
+            </ul>
+            </pre>
+          </section>
+          <section>
+            <h3> Formulation of outputs: </h3>
+            <ul>
+              <font size=6>
+						  <li><font color="#99FF99">r</font>: a shape of batch_size * 1 array</li>
+						  <li><font color="#99FF99">key</font>: a shape of batch_size * PROGRAM_KEY_VEC_SIZE array</li>
+						  <li><font color="#99FF99">args</font>: a list of MAX_ARG_NUM elements, each of them is a batch_size * ARG_DEPTH array represents softmax scores</li>
+              </font>
+            </ul>
+            
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Training Strategies and their implementations</h2>
+            <p>
+              In this section we summarize the training strategies generally used in the paper and use python style pseudo-code to give a brief implementations.
+            </p>
+          </section>
+          <section>
+            <h3>Method of training examples extraction</h3>
+            <p> Training examples for each mini-batch are fetched with frequency proportional to the model’s current prediction error for the corresponding program. </p>
+            <pre><code class="hljs" data-trim contenteditable>
+def filter_question(steps_list, predict_error):
+    sub_steps_list = []
+    scores = softmax(predict_error)
+    for sequence in steps_list:
+        weights[sequence['num']] = sum(scores[sequence['num']])
+    for i in range(batch_size):
+        sub_steps_list.append(weighted_sample(steps_dict, weights))
+    return sub_step_list
+            </code>
+            </pre>
+          </section>
+       </section>
+        <section>
+          <h2>End of My Presentation, Thanks! </h2>
+        </section>
+       
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+      
+				transition: 'convex', // none/fade/slide/convex/concave/zoom
+        math: {
+        mathjax: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js',
+        config: 'TeX-MML-AM_CHTML'  // See http://docs.mathjax.org/en/latest/config-files.html
+    },
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+			{ src: 'plugin/zoom-js/zoom.js', async: true },
+      { src: 'plugin/notes/notes.js', async: true },
+				]
+			});
+		</script>
+	</body>
+</html>

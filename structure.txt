@@ -1,0 +1,47 @@
+src
+├── gen_test_data.sh
+├── gen_training_data.sh
+├── __init__.py
+├── npi
+│   ├── core
+│   │   ├── env
+│   │   │   ├── categories
+│   │   │   │   ├── 3D_regularization.py
+│   │   │   │   ├── addition.py
+│   │   │   │   ├── addition.pyc
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── __init__.pyc
+│   │   │   │   └── sorting.py
+│   │   │   ├── env.py
+│   │   │   ├── env.pyc
+│   │   │   ├── __init__.py
+│   │   │   └── __init__.pyc
+│   │   ├── __init__.py
+│   │   ├── __init__.pyc
+│   │   └── model
+│   │       ├── config.py
+│   │       ├── core.py
+│   │       ├── decoders
+│   │       │   ├── f_args.py
+│   │       │   ├── f_end.py
+│   │       │   ├── f_prog.py
+│   │       │   └── __init__.py
+│   │       ├── encoders
+│   │       │   ├── f_enc.py
+│   │       │   ├── f_env.py
+│   │       │   └── __init__.py
+│   │       ├── f_lstm.py
+│   │       ├── __init__.py
+│   │       ├── lib.py
+│   │       ├── model_bk.py
+│   │       ├── model.py
+│   │       ├── solver.py
+│   │       ├── testing_model.py
+│   │       └── training_model.py
+│   ├── __init__.py
+│   ├── __init__.pyc
+│   └── interfaces
+│       └── some html and js files
+└── run_training_model.sh
+
+8 directories, 36 files
