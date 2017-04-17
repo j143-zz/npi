@@ -1,24 +1,16 @@
-#coding: utf-8
-
-from collections import OrderedDict
+# -*- coding: utf-8 -*-
 
 import numpy as np
 import mxnet as mx
 
 from core import Arguments, Program
 from env.addition import Addition
-from env.env_config import LEFT, RIGHT, WRITE, MOVE, SWAP
-
-### Program library for Addition
-
-
-# Can we just return tuple of (r, prog, args)?
+from config import LEFT, RIGHT, WRITE, MOVE
 
 def add(env, args):
-    (input_1, input_2, carry, output) = env.observation()
-    for ptr in env.scratch_pad.pointers:
-        print ptr.position
-    if input_1 == ' ' and input_2 == ' ' and carry == ' ':
+    (input_1, input_2, carry, output) = env._ob
+    for ptr in env._ptrs:
+     if input_1 == ' ' and input_2 == ' ' and carry == ' ':
         return None
     call = []
     call.append((ADD1, Arguments()))
@@ -26,7 +18,7 @@ def add(env, args):
     return call
 
 def add1(env, args):
-    (input_1, input_2, carry, output) = env.observation()
+    (input_1, input_2, carry, output) = env._ob
     if input_1 == ' ':
         input_1 = 0
     if input_2 == ' ':
@@ -52,31 +44,35 @@ def carry(env, args):
 
 def lshift(env, args):
     call = []
-    for i in xrange(1, 4):
+    for i in range(1, 4):
         call.append((ACT, Arguments((i, LEFT, MOVE))))
     call.append((1, ACT, Arguments((4, LEFT, MOVE))))
     return call
 
 def rshift(env, args):
     call = []
-    for i in xrange(1, 4):
+    for i in range(1, 4):
         call.append((ACT, Arguments((i, RIGHT, MOVE))))
     call.append((1, ACT, Arguments((4, RIGHT, MOVE))))
     return call
 
 def write(env, args):
-    (a_1, a_2, a_3) = args.decode()
-    env.scratch_pad.update(a_1-1, a_2)
+    (a_1, _, a_3) = args._numeric
+    (_, a_2, _) = args._one_hot.asnumpy()
+    env._ptrs[a_1-1]._value = a_2
+    env._pad._update(env._ptrs[a_1-1])
     return None
 
 def move(env, args):
-    (a_1, a_2, a_3) = args.decode()
-    print a_1
+    (a_1, a_2, a_3) = args._numeric
     if a_2 == LEFT:
-        env.scratch_pad.pointers[a_1-1].to_left()
+        env._ptrs[a_1-1]._to_left()
     else:
-        env.scratch_pad.pointers[a_1-1].to_right()
+        env._ptrs[a_1-1]._to_right() 
     return None
+
+
+
 
 ACT = Program('ACT', None, {'WRITE': write, 'MOVE': move})
 LSHIFT = Program('LSHIFT', None, lshift)
@@ -86,14 +82,12 @@ ADD1 = Program('ADD1', None, add1)
 ADD = Program('ADD', None, add)
 
 
+lib = {
+    ADD : 1,
+    ADD1 : 2,
+    CARRY : 3,
+    RSHIFT : 4,
+    LSHIFT : 5,
+    ACT : 6
+}
 
-
-
-
-
-
-
-
-
-
-    # get pointers' value, do an addition and then 

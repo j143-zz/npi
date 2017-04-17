@@ -2,4 +2,9 @@
 
 *.pyc
 
+src_bk/*
+
 *_bk.py
+
+*.txt
+*.org
