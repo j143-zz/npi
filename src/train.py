@@ -25,10 +25,10 @@ add_env = Addition()
 
 data_gen = Generator()
 
-num_data = 150
-num_train = 100
+num_data = 30000
+num_train = 20000
 
-batch_size = 10
+batch_size = 100
 
 for i in range(num_data):
     input_1 = random.randint(0, 999999)
@@ -142,12 +142,26 @@ def sym_gen(bucket_size):
 model = mx.mod.BucketingModule(
         sym_gen             = sym_gen,
         default_bucket_key  = data_train.default_bucket_key,
-        context             = mx.cpu(0))
+        context             = mx.gpu(0))
 
 
 # model.bind(data_shapes=data_train.provide_data, label_shapes=data_train.provide_label, for_training=True, force_rebind=True)
 # model.init_params(initializer=mx.init.Xavier(factor_type="in", magnitude=2.34),allow_missing=True, force_init=True)
 # model.init_optimizer(kvstore='local', optimizer='adam',optimizer_params={ 'learning_rate': 0.0001, 'wd': 0.000095 })
+
+# toy_env = Addition()
+# toy_env(123, 789)
+
+# data_gen.inference(toy_env, ADD, Arguments())
+# data = [[data_gen.env_data], [data_gen.prog_data], [data_gen.args_data]]
+# label = [[data_gen.end_label],[data_gen.prog_label],[data_gen.args_label]]
+
+# toy_data = NPIBucketIter(data=data, label=label, batch_size=1, buckets=buckets)
+
+# outputs = model.predict(toy_data, num_batch=1)
+# argmax_outputs = [mx.nd.argmax(outputs[0], axis=1).asnumpy(), mx.nd.argmax(outputs[1], axis=1).asnumpy(), mx.nd.argmax(outputs[2], axis=3).asnumpy()]
+# for i in range(30):
+#     print argmax_outputs[0][i], argmax_outputs[1][i], (argmax_outputs[2][0][i][0], argmax_outputs[2][0][i][1], argmax_outputs[2][0][i][2])
 
 # for bucket in buckets:
 #     if not bucket in model._buckets:
@@ -180,8 +194,9 @@ model.fit(
         optimizer_params    = { 'learning_rate': 0.0001,
                                 'wd': 0.000095 },
         initializer         = mx.init.Xavier(factor_type="in", magnitude=2.34),
-        num_epoch           = 1,
-        batch_end_callback  = mx.callback.Speedometer(10, 10))
+        num_epoch           = 25,
+        batch_end_callback  = mx.callback.Speedometer(100, 25)
+        epoch_end_callback  = mx.callback.module_checkpoint(model, 'NPI-model'))
 
 # num_epoch = 1
 # eval_metric = ModifiedPerplexity(-1)

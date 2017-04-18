@@ -14,9 +14,10 @@ class ModifiedPerplexity(EvalMetric):
         counting. usually should be -1. Include
         all entries if None.
     """
-    def __init__(self, ignore_label):
+    def __init__(self, ignore_label, axis=-1):
         super(ModifiedPerplexity, self).__init__('ModifiedPerplexity')
         self.ignore_label = ignore_label
+        self.axis = axis
 
     def update(self, labels, preds):
         assert len(labels) == len(preds)
@@ -30,7 +31,8 @@ class ModifiedPerplexity(EvalMetric):
             assert label.size == pred.size/pred.shape[-1], \
                 "shape mismatch: %s vs. %s"%(label.shape, pred.shape)
             label = label.as_in_context(pred.context).astype(dtype='int32').reshape((label.size,))
-            pred = ndarray.batch_take(pred, label)
+            pred = mx.nd.Reshape(pred, shape=(-1, pred.shape[-1]))
+            pred = ndarray.pick(pred, label.astype(dtype='int32'), axis=self.axis)
             probs.append(pred)
 
         for label, prob in zip(labels, probs):
