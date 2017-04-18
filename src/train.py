@@ -25,8 +25,8 @@ add_env = Addition()
 
 data_gen = Generator()
 
-num_data = 30000
-num_train = 20000
+num_data = 15000
+num_train = 10000
 
 batch_size = 100
 
@@ -195,7 +195,7 @@ model.fit(
                                 'wd': 0.000095 },
         initializer         = mx.init.Xavier(factor_type="in", magnitude=2.34),
         num_epoch           = 25,
-        batch_end_callback  = mx.callback.Speedometer(100, 25)
+        batch_end_callback  = mx.callback.Speedometer(batch_size, 25),
         epoch_end_callback  = mx.callback.module_checkpoint(model, 'NPI-model'))
 
 # num_epoch = 1
